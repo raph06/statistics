@@ -8,3 +8,7 @@ install.packages("tibble")
 install.packages("purrr")
 install.packages("tidyr")
 install.packages("dplyr")
+install.packages("caTools")
+install.packages("bitops")
+install.packages("rprojroot")
+
