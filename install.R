@@ -1,8 +1,8 @@
+install.packages('BiocManager')
 install.packages("rmarkdown")
 install.packages("limma")
 install.packages("survival")
 install.packages("survminer")
-install.packages("curatedBreastData")
 install.packages("survivalROC")
 install.packages("tibble")
 install.packages("purrr")
@@ -11,4 +11,7 @@ install.packages("dplyr")
 install.packages("caTools")
 install.packages("bitops")
 install.packages("rprojroot")
+BiocManager::install('limma')
+BiocManager::install("curatedBreastData")
+
 
