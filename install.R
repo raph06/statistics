@@ -13,5 +13,4 @@ install.packages("bitops")
 install.packages("rprojroot")
 BiocManager::install('limma')
 BiocManager::install("curatedBreastData")
-
-
+BiocManager::install("GEOquery")
