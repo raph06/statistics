@@ -1,0 +1,309 @@
+---
+title: "Introduction to survival analysis with R"
+subtitle: 'Statistics M1'
+author:
+- Raphaël Bonnet 
+  (PhD student C3M-U1065, Inserm, UCA)
+date: "`r format(Sys.time(), '%d %B %Y')`"
+tags: [R, Survival analysis, Cox regression model]
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction notes
+
+
+ 
+# curatedBreastData package: Access & explore the data
+
+
+## Loading packages
+```{r load packages}
+# suppressMessages(library(Biobase))
+suppressMessages(library(limma))
+suppressMessages(library(survival))
+suppressMessages(library(survminer))
+suppressMessages(library(survivalROC))
+suppressMessages(library(tibble))
+suppressMessages(library(purrr))
+suppressMessages(library(tidyr))
+suppressMessages(library(dplyr))
+suppressMessages(library(FactoMineR))
+suppressMessages(library(genefilter))
+
+```
+
+## Loading data
+
+```{r load data}
+
+#load up data
+
+data=readRDS("data_intro.RData")
+clinical=data[[1]] #clinical data
+dat.m=data[[2]] #data matrix
+annot=data[[3]] #probe/gene corrrespondance
+```
+
+
+## Basic functions R - Exploring the data
+
+* Data matrix are in RNA-DNA seq are constituted of:
+    * n rows corresponding to genes called features
+    * p columns corresponding to patients called samples 
+
+* Before starting to work on a object its always necessary to 
+    * know the type of object (character, numeric, boolean, matrix, data.frame, list, S4, etc.)
+    * know the dimensions of the object
+    
+### - Using class(), dim(), colnames(), rownames() and unique() on expression data (dat.m & annot)
+
+```{r dat.m }
+#dims and class
+class(dat.m)
+dim(dat.m)
+
+# first 5 sample names
+head(colnames(dat.m))
+
+# first 5 feature names
+head(rownames(dat.m))
+```
+
+We must include gene names into the data matrix
+
+```{r annot }
+
+# let's include gene names into the matrix
+rownames(dat.m)=annot[,2]
+
+# let's use unique() to have a better view
+head(rownames(dat.m))
+
+#extract gene names
+genes=rownames(dat.m)
+```
+
+Not all probes have a corresponding annotated genes, this is why we have many genes called NA
+
+### - Using sum() and is.na() on genes (dat.m)
+
+**<span style="color:red">*How many genes are NA? </span>** 
+
+**<span style="color:red">*How many genes have been annotated? </span>** 
+
+
+```{r}
+#enter your code here 
+```
+
+* Most of the time, and depending on the sequencing library we should find 
+    * ~20K protein-coding genes 
+    * and ~10K unannnotated pseudogenes (NA)
+
+### - Using class() name() and $ (accessor) on clinical data (clinical)
+
+* Clinical tables in survival studies are constituted of:
+    * n rows corresponding to samples
+    * p columns corresponding to clinical features 
+    
+```{r clinical}
+class(clinical)
+dim(clinical)
+
+#we can have a look at clinical features
+names(clinical)
+
+#two types of clinical data required
+unique(clinical$clinical.OS)  #boolean
+class(clinical$clinical.OS_months_or_MIN_months_of_OS) #numeric
+
+```
+**<span style="color:black"> What are the differences between data.frame and matrix objects ? </span>** 
+**<span style="color:red"> Check if dimensions matches in dat.m, clinical and annot ? </span>** 
+**<span style="color:red"> What are the number of features, clinical features and samples ? </span>** 
+
+
+```{r}
+#enter your code here 
+
+```
+
+
+It's very rare to have access to clinical data.
+ 
+
+## Overview of the gene expression: \ndensity & heatmap & MDS plots
+
+
+```{r most variable genes init, echo=F}
+
+# lets have a look at the distribution
+limma::plotDensities(dat.m,legend=F, main='Features density across samples')
+dim(dat.m)
+dat.m=varFilter(dat.m, var.cutoff = 0.1)
+varGenes <- function(z){y <- apply(z, 1, IQR); z[y > quantile(y, .95),]}
+
+heatmap(varGenes(dat.m), main='Heatmap of the most variable genes')
+
+d <- dist(t(varGenes(dat.m))) # euclidean distances between the rows
+fit <- cmdscale(d,eig=TRUE, k=2) # k is the number of dim
+
+# plot solution
+x <- fit$points[,1]
+y <- fit$points[,2]
+
+colors=clinical$clinical.OS+1
+plot(x, y, xlab="mds 1", ylab="mds 2",
+  main="Metric MDS", type="n"); text(x, y, labels = colnames(dat.m), cex=.7,col=colors)
+
+```
+
+> Survival of the patient is overlayed in color (black: remission, red: relapse) 
+
+**These vizualisation gives us some insights on the quality of the expression set we are analysing.**
+
+  * We can have a look to the distribution of the feature (genes) expressions.
+  * We can overlook the expression of the top variable genes in a heatmap to see wether or not some patterns already emerge.
+  * We can see here that the most variable genes fail to explain the survival of the patients.
+
+<br/>
+
+# Cox Proportional Hazards Regression Analysis
+
+### Basic concepts
+
+* __Survival time__
+    * Event-free survival time
+
+* __Censoring__ 
+end of following (e.g. end of treatment / no event / loss of consent)
+
+* __Events__
+    * Relapse 
+    * Death
+
+* __Survival probability__ 
+
+function S(t): survival probability of an individual from t0 to t
+
+$$S(t)=S(t−1)(1−d*n)$$
+
+* *Where*
+    * *S(t−1) = the probability of being alive at t−1*
+    * *n = the number of patients alive just before t*
+    * *d = the number of events at t*
+    * *dt0 = 0*
+    * *S(0) = 1*
+
+<br/>
+  
+* __Hazard ratio probalility__
+
+function h(t): event probability at time t
+
+exp(coefficient) gives you the survival ratio between two groups
+
+(i.e: exp(coefficient)=0.2 means that the risk group has 20% more chance of an occuring event)
+
+<br/>
+
+### Visualization
+
+* __Kaplan-Meier plot__
+
+Represent the estimation of the survival probability 
+based on true survival times.
+*(Kaplan and Meier, J Am Stat Assoc, 1958).*
+
+
+S(t) is a **step** function that **changes value only at the time of each event**. 
+
+Provides a useful summary of the data that can be used to estimate measures such as **median survival time**.
+
+
+
+<br/>
+
+**<span style="color:darkblue">- Using the mean of gene expression of all patients as a cut-off, it is possible to discretize (0: low expression, 1: high expression) the gene expression to create two groups of patients.</span>** 
+
+<br/>
+
+
+#### - RORC - regulatory role in thymopoiesis
+
+```{r, echo=F}
+dat.m=dat.m[,-which(is.na(clinical$clinical.OS_months_or_MIN_months_of_OS))]
+clinical=clinical[-which(is.na(clinical$clinical.OS_months_or_MIN_months_of_OS)),]
+
+g=which(rownames(dat.m)=="RORC")
+  if (length(g)>1){subset=apply(dat.m[g,],MARGIN = 2,FUN = max)} else {subset=dat.m[g,]}
+gene=ifelse(subset>mean(subset),1,0)
+
+
+fit <- survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS) ~ gene ,                 
+            data = data.frame(clinical))
+fit_table <- coxph(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS) ~ gene)
+info=summary(fit_table)
+pval=info$sctest[3]
+coef=info$coefficients[1]
+HR=info$coefficients[2]*10
+if (pval<0.05){print(pval)}
+fit0 <- survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS) ~ 1,
+              data = data.frame(clinical))
+ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
+           pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
+               c("low expression\ngroup","high expression\ngroup","all patients"),linetype = c(1,1,2),censor.shape="x", censor.size = 3,
+           title = "\tSurvival model - RORC",xlab = "Time in Days",pval.method =   TRUE,
+           ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), xlim = c(0, 145))
+
+
+```
+
+
+```{r, echo=F}
+
+
+url="https://raw.githubusercontent.com/raph06/statistics/master/ranked_survival_score_correspondance.png"
+url2="http://dni-institute.in/blogs/wp-content/uploads/2015/02/cox_regression_output.png"
+
+```
+
+<br/>
+
+Better survival for high expression group for PTEN expression is consistent with its tumor suppressor function.
+
+**Be very carful when anylising expression data as many other confounding factors can be responsible for the heterogeneity from one cohort to another.**
+
+
+<br/>
+
+**<span style="color:red">In silico hypothesis must be confronted to a biological experiment</span>**
+
+<br/>
+
+
+#### Statistics:
+
+![](`r url2`)
+
+
+* Likelihood ratio / Wald test / Score (logrank) test : there is no difference in survival between the two groups (H0)
+
+**<span style="color:red">- To what correspond the fit0 variable ?</span>**
+
+**<span style="color:red">- Display the 'fit' variable, what are the proportions of events for each group ?</span>**
+
+**<span style="color:red">- What is the pvalue for this model ?</span>**
+
+**<span style="color:red">- What is the hazard ratio between the two groups ? What does it mean ?</span>**
+
+```{r relapse 2.1}
+
+#Your code here
+
+```
