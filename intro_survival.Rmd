@@ -27,12 +27,12 @@ knitr::opts_chunk$set(echo = TRUE)
 suppressMessages(library(limma))
 suppressMessages(library(survival))
 suppressMessages(library(survminer))
-suppressMessages(library(survivalROC))
-suppressMessages(library(tibble))
-suppressMessages(library(purrr))
-suppressMessages(library(tidyr))
-suppressMessages(library(dplyr))
-suppressMessages(library(FactoMineR))
+# suppressMessages(library(survivalROC))
+# suppressMessages(library(tibble))
+# suppressMessages(library(purrr))
+# suppressMessages(library(tidyr))
+# suppressMessages(library(dplyr))
+# suppressMessages(library(FactoMineR))
 suppressMessages(library(genefilter))
 
 ```
@@ -123,8 +123,10 @@ unique(clinical$clinical.OS)  #boolean
 class(clinical$clinical.OS_months_or_MIN_months_of_OS) #numeric
 
 ```
-**<span style="color:black"> What are the differences between data.frame and matrix objects ? </span>** 
-**<span style="color:red"> Check if dimensions matches in dat.m, clinical and annot ? </span>** 
+**<span style="color:black"> What are the practical differences between data.frame and matrix objects ? </span>** 
+
+**<span style="color:red"> Check if dimensions matches in dat.m, clinical and annot </span>** 
+
 **<span style="color:red"> What are the number of features, clinical features and samples ? </span>** 
 
 
@@ -134,7 +136,11 @@ class(clinical$clinical.OS_months_or_MIN_months_of_OS) #numeric
 ```
 
 
-It's very rare to have access to clinical data.
+It's very rare to have access to clinical data, most of the time, researcher must provide the omic data but the clinical infromations remain confidential.
+
+
+To access them, one must contact the holder of the clinical data, ask for access and wait for authorisation and afterwards data. It is best not to rely on that. 
+
  
 
 ## Overview of the gene expression: \ndensity & heatmap & MDS plots
@@ -161,6 +167,8 @@ colors=clinical$clinical.OS+1
 plot(x, y, xlab="mds 1", ylab="mds 2",
   main="Metric MDS", type="n"); text(x, y, labels = colnames(dat.m), cex=.7,col=colors)
 
+url="https://miro.medium.com/max/1478/1*CtT_2Ohfwi-h9kJAVjOYmQ.png"
+url2="https://miro.medium.com/proxy/1*KFjJc77t-MGn7-bp3RyYeg.png"
 ```
 
 > Survival of the patient is overlayed in color (black: remission, red: relapse) 
@@ -177,29 +185,121 @@ plot(x, y, xlab="mds 1", ylab="mds 2",
 
 ### Basic concepts
 
-* __Survival time__
-    * Event-free survival time
+<br/>
 
-* __Censoring__ 
-end of following (e.g. end of treatment / no event / loss of consent)
+* __Survival time__: (how long one survive)
+    * Event-free survival time: (how long one survive without any event)
+    
+<br/>
 
-* __Events__
+* __Events__ 
     * Relapse 
     * Death
+    
+<br/>
+    
+* __Censoring__: end of patient following or incomplete data
+    * End of treatment (5 years in general)
+    * Loss of consent 
+    
+<br/>
 
 * __Survival probability__ 
 
 function S(t): survival probability of an individual from t0 to t
 
-$$S(t)=S(t−1)(1−d*n)$$
+S(t) is a **step** function that **changes value only at the time of each event**. 
+
+<br/>
+
+* __Kaplan-Meier plot__
+
+Represent the estimation of the survival probability 
+based on true survival times.
+*(Kaplan and Meier, J Am Stat Assoc, 1958).*
+
+Provides a useful summary of the data that can be used to estimate measures such as **median survival time**.
+
+<br/>
+
+**Without cencoring in the data**
+
+$$S(t)=(N - n)/N$$
+
+* *Where*
+    * *N = the total number of patients* 
+    * *n = the number of events from t0 to t*
+
+<br/>
+
+
+![](`r url`)
+
+<br/>
+
+**<span style="color:red"> Calculate the survival probability at t=7 </span>** 
+
+
+```{r}
+#your code here
+
+```
+
+<br/>
+
+**With cencoring in the data**
+<br/>
+
+$$S(t)=S(t−1)(1−d/n)$$
 
 * *Where*
     * *S(t−1) = the probability of being alive at t−1*
-    * *n = the number of patients alive just before t*
+    * *n = the number of patients left just before t*
     * *d = the number of events at t*
     * *dt0 = 0*
     * *S(0) = 1*
 
+<br/>
+
+
+
+![](`r url2`)
+
+<br/>
+
+**<span style="color:red"> Calculate the survival probability at t=5 </span>** 
+
+<br/>
+
+
+```{r}
+#your code here
+
+```
+
+## Implementing the model in R
+
+To fit a cox model to data, we use the following code:
+
+**fit=survfit(Surv(os_time,os))**
+
+**os_time** is a numeric vector associated to every patients containing the time from diagnosis (t0) to event (death, relapse, cencoring)
+
+**os** is a boolean resulting from the question 'does an event occured?'
+
+
+```{r echo=F}
+#make a two column matrix with os.time and os
+
+#fit the model
+
+#plot the fitted model plot()
+
+```
+
+
+**<span style="color:red"> What are the median survival times for the 2 previous examples? </span>** 
+ 
 <br/>
   
 * __Hazard ratio probalility__
@@ -212,22 +312,6 @@ exp(coefficient) gives you the survival ratio between two groups
 
 <br/>
 
-### Visualization
-
-* __Kaplan-Meier plot__
-
-Represent the estimation of the survival probability 
-based on true survival times.
-*(Kaplan and Meier, J Am Stat Assoc, 1958).*
-
-
-S(t) is a **step** function that **changes value only at the time of each event**. 
-
-Provides a useful summary of the data that can be used to estimate measures such as **median survival time**.
-
-
-
-<br/>
 
 **<span style="color:darkblue">- Using the mean of gene expression of all patients as a cut-off, it is possible to discretize (0: low expression, 1: high expression) the gene expression to create two groups of patients.</span>** 
 
@@ -236,7 +320,7 @@ Provides a useful summary of the data that can be used to estimate measures such
 
 #### - RORC - regulatory role in thymopoiesis
 
-```{r, echo=F}
+```{r, echo=T}
 dat.m=dat.m[,-which(is.na(clinical$clinical.OS_months_or_MIN_months_of_OS))]
 clinical=clinical[-which(is.na(clinical$clinical.OS_months_or_MIN_months_of_OS)),]
 
@@ -259,7 +343,10 @@ ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
            pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
                c("low expression\ngroup","high expression\ngroup","all patients"),linetype = c(1,1,2),censor.shape="x", censor.size = 3,
            title = "\tSurvival model - RORC",xlab = "Time in Days",pval.method =   TRUE,
-           ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), xlim = c(0, 145))
+           ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"))
+
+
+ggforest(fit_table, data = clinical)
 
 
 ```
@@ -307,3 +394,5 @@ Better survival for high expression group for PTEN expression is consistent with
 #Your code here
 
 ```
+
+

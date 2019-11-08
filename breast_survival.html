@@ -180,7 +180,7 @@ summary {
 <h1 class="title toc-ignore">Breast cancer survival analysis with R</h1>
 <h3 class="subtitle">Statistics M1</h3>
 <h4 class="author">Raphaël Bonnet (PhD student C3M-U1065, Inserm, UCA)</h4>
-<h4 class="date">09 octobre 2019</h4>
+<h4 class="date">08 novembre 2019</h4>
 
 </div>
 
@@ -369,54 +369,6 @@ head(levels(fData(eset)$gene_symbol))</code></pre>
 <li>We can see here that the 1000 most variable genes fail to explain the survival of the patients.</li>
 </ul>
 <p><br /></p>
-</div>
-</div>
-<div id="cox-proportional-hazards-regression-analysis" class="section level1">
-<h1>Cox Proportional Hazards Regression Analysis</h1>
-<div id="basic-concepts" class="section level3">
-<h3>Basic concepts</h3>
-<ul>
-<li><strong>Survival time</strong>
-<ul>
-<li>Event-free survival time</li>
-</ul></li>
-<li><p><strong>Censoring</strong> end of following (e.g. end of treatment / no event / loss of consent)</p></li>
-<li><strong>Events</strong>
-<ul>
-<li>Relapse</li>
-<li>Death</li>
-</ul></li>
-<li><p><strong>Survival probability</strong></p></li>
-</ul>
-<p>function S(t): survival probability of an individual from t0 to t</p>
-<p><span class="math display">\[S(t)=S(t−1)(1−d*n)\]</span></p>
-<ul>
-<li><em>Where</em>
-<ul>
-<li><em>S(t−1) = the probability of being alive at t−1</em></li>
-<li><em>n = the number of patients alive just before t</em></li>
-<li><em>d = the number of events at t</em></li>
-<li><em>dt0 = 0</em></li>
-<li><em>S(0) = 1</em></li>
-</ul></li>
-</ul>
-<p><br /></p>
-<ul>
-<li><strong>Hazard ratio probalility</strong></li>
-</ul>
-<p>function h(t): event probability at time t</p>
-<p>exp(coefficient) gives you the survival ratio between two groups</p>
-<p>(i.e: exp(coefficient)=0.2 means that the risk group has 20% more chance of an occuring event)</p>
-<p><br /></p>
-</div>
-<div id="visualization" class="section level3">
-<h3>Visualization</h3>
-<ul>
-<li><strong>Kaplan-Meier plot</strong></li>
-</ul>
-<p>Represent the estimation of the survival probability based on true survival times. <em>(Kaplan and Meier, J Am Stat Assoc, 1958).</em></p>
-<p>S(t) is a <strong>step</strong> function that <strong>changes value only at the time of each event</strong>.</p>
-<p>Provides a useful summary of the data that can be used to estimate measures such as <strong>median survival time</strong>.</p>
 </div>
 <div id="sorting-out-the-clinical-table" class="section level2">
 <h2>Sorting out the clinical table</h2>

@@ -225,57 +225,6 @@ plot(x, y, xlab="mds 1", ylab="mds 2",
 
 <br/>
 
-# Cox Proportional Hazards Regression Analysis
-
-### Basic concepts
-
-* __Survival time__
-    * Event-free survival time
-
-* __Censoring__ 
-end of following (e.g. end of treatment / no event / loss of consent)
-
-* __Events__
-    * Relapse 
-    * Death
-
-* __Survival probability__ 
-
-function S(t): survival probability of an individual from t0 to t
-
-$$S(t)=S(t−1)(1−d*n)$$
-
-* *Where*
-    * *S(t−1) = the probability of being alive at t−1*
-    * *n = the number of patients alive just before t*
-    * *d = the number of events at t*
-    * *dt0 = 0*
-    * *S(0) = 1*
-
-<br/>
-  
-* __Hazard ratio probalility__
-
-function h(t): event probability at time t
-
-exp(coefficient) gives you the survival ratio between two groups
-
-(i.e: exp(coefficient)=0.2 means that the risk group has 20% more chance of an occuring event)
-
-<br/>
-
-### Visualization
-
-* __Kaplan-Meier plot__
-
-Represent the estimation of the survival probability 
-based on true survival times.
-*(Kaplan and Meier, J Am Stat Assoc, 1958).*
-
-
-S(t) is a **step** function that **changes value only at the time of each event**. 
-
-Provides a useful summary of the data that can be used to estimate measures such as **median survival time**.
 
 
 ## Sorting out the clinical table
