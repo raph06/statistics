@@ -55,7 +55,7 @@ suppressMessages(library(FactoMineR))
 
 ## Loading data
 
-```{r load data, cache=T}
+```{r load data, cache=F}
 #load up datasets that are in S4 expressionSet format.
 #clinical data from master clinicalTable already linked to each sample
 #in these ExpressionSets in the phenoData slot.
@@ -166,7 +166,7 @@ It's very rare to have access to clinical data, here the clinical data has been 
 
 ### - Let's have a look at another unprocessed dataset.
 
-```{r, echo=T, message=FALSE, cache=T}
+```{r, echo=T, message=FALSE, cache=F}
 gse=GEOquery::getGEO('GSE39591')
 ```
 
