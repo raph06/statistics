@@ -59,20 +59,19 @@ annot=data[[3]] #probe/gene corrrespondance
 
 ```{r dat.m_struct }
 #dims and class of dat.m
-
+dim(dat.m)
 #enter your code here
-
+class(dat.m)
 ```
 
 
 ```{r names}
 # head(), colnames(), rownames()
+print('first 5 sample names') 
+head(colnames(dat.m))
 
-# first 5 sample names 
-#enter your code here
-
-# first 5 feature names
-#enter your code here
+print('first 5 feature names')
+head(rownames(dat.m))
 
 ```
 
@@ -83,8 +82,7 @@ We must include gene names into the data matrix
 head(annot)
 
 # ! let's include gene names into the matrix
-#enter your code here
-
+rownames(dat.m)=annot[,2]
 # let's check rownames
 head(rownames(dat.m))
 
@@ -102,7 +100,12 @@ Not all probes have a corresponding annotated genes, this is why we have many ge
 
 
 ```{r}
-#enter your code here 
+print('na genes')
+sum(is.na(genes))
+
+print('annotated genes')
+dim(dat.m)[1]-sum(is.na(genes))
+
 ```
 
 * Most of the time, and depending on the sequencing library we should find 
@@ -130,13 +133,19 @@ class(clinical$clinical.OS_months_or_MIN_months_of_OS) #numeric
 
 **<span style="color:black"> What are the practical differences between data.frame and matrix objects ? </span>** 
 
+Dataframes have accessors ($) that can be used to access each columns. Also a data.frame can contain different types of data.
+
 **<span style="color:red"> Check if dimensions matches in dat.m, clinical and annot </span>** 
+
 
 **<span style="color:red"> What are the number of features, clinical features and samples ? </span>** 
 
 
 ```{r}
-#enter your code here 
+#we see that each data table contain either 114 samples and or 54696 features
+dim(dat.m)
+dim(annot)
+dim(clinical)
 
 ```
 
@@ -246,8 +255,8 @@ $$S(t)=(N - n)/N$$
 
 
 ```{r}
-#your code here
-
+print('survival time t=7')
+(10-7)/10
 ```
 
 <br/>
@@ -278,8 +287,8 @@ $$S(t)=S(t−1)(1−d/n)$$
 
 
 ```{r}
-#your code here
-
+print('survival time t=5')
+0.8*(1-(1/6))
 ```
 
 ## Implementing the model in R
@@ -294,18 +303,12 @@ To fit a cox model to data, we use the following code:
 
 **covariate** here set to 1 (no covariate)
 
-```{r echo=F}
-#make a two column matrix with os.time and os
-
-#fit the model
-
-#plot the fitted model plot()
-
-```
-
-
 **<span style="color:red"> What are the median survival times for the 2 previous examples? </span>** 
  
+<br/>
+
+Median survival times for these two examples are respectively 5 and 6.
+
 <br/>
   
 * __Hazard ratio probalility__
@@ -357,10 +360,16 @@ ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
 
 **<span style="color:red">- To what correspond the fit0 variable ?</span>**
 
+fit0 is the null model representing all the patients in only one group
+
 **<span style="color:red">- Display the 'fit' variable, what are the proportions of events for each group ?</span>**
 
-
 ```{r}
+
+print(fit)
+#65 and 42 patients in each groups
+#0.9193548% of event in group 1 (57/62)
+#0.8333333% of event in group 2 (35/42)
 
 ggforest(fit_table, data = clinical)
 
@@ -403,20 +412,14 @@ Better survival for low expression group for RORC expression is consistent as it
 
 **<span style="color:red">- What is the pvalue for this model ?</span>**
 
+p=0.03898
+
 **<span style="color:red">- What is the hazard ratio between the two groups ? What does it mean ?</span>**
 
-```{r relapse 2.1}
-
-#Your code here
-
-```
+HR =  0.6380
 
 ## Explore another dataset:
 
-```{r}
-head(lung)
-
-```
 
 Go to https://stat.ethz.ch/R-manual/R-devel/library/survival/html/lung.html
 
@@ -429,9 +432,38 @@ Go to https://stat.ethz.ch/R-manual/R-devel/library/survival/html/lung.html
 
 **<span style="color:red">- How many number of events for this variable status ?</span>**
 
+Status is the survival censor
+
 **<span style="color:red">- How many other covariate are there and to what do they correpsond ?</span>**
+
+inst, age, sex, ph.ecog, ph.karno, pat.karno, meal.cal, wt.loss are some covariates that can be used
 
 **<span style="color:red">- Fit and represent a cox model with no covariate, what is the median survival time?</span>**
 
+
+```{r}
+head(lung)
+#patients
+dim(lung)[1]
+#genre
+table(lung$sex)
+#status?
+
+fit <- survfit(Surv(time, status) ~ 1, data = lung)
+plot(fit)
+```
+
+**<span style="color:red">- what is the median survival time?</span>**
+
+Between 306 and 310
+
+```{r}
+
+summary(fit)
+
+
+```
+
 **<span style="color:red">- What is the value of S(t=558) ? </span>**
 
+S(558)=0.2392
