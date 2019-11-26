@@ -66,19 +66,26 @@ data(clinicalData)
 
 ## First layer: the list of ExpressionSets
 
+### using length(), head(), names() on list.eset
+
 ```{r exploring the data}
 #renaming for easier handling
 
 list.eset=curatedBreastDataExprSetList
 
-# How big is loaded object
-length(list.eset)
-
-# what's inside ? 
-head(names(list.eset))
 
 
 ```
+
+```{r}
+# How big is loaded object
+## your code here
+
+# what's inside ? 
+## your code here
+
+```
+
 
 ```{r exploring the list}
 #What are the dimensions of each eset (samples and genes)
@@ -113,33 +120,44 @@ ExpressionSet is an object of type S4 that can be explored using the accessor "@
 
 <br/>
 
-### - Use `eset@assayData$exprs` or exprs() to access gene expression data 
-```{r eset exprs}
+## exprs()
 
+### - Use class(),  `eset@assayData$exprs` or exprs() to access gene expression data 
+
+```{r eset exprs}
 # lets look inside one object
 eset=list.eset[[4]]  
 
-class(eset)
+```
 
-class(eset@assayData$exprs)
-# or via methods of ExpressionSet objects (Biobase)
-# class(exprs(eset))
-head(exprs(eset))[,c(1:5)]
+```{r}
+
+#what types are eset and eset@assayData$exprs
+
+#your code here
+
+#have a look into exprs(eset)
+#USE head()
+
+#your code here
 
 ```
+
+## fData()
 
 ### - Use `eset@featureData@data` or fData() to access features (gene) metadata 
 
-```{r eset fdata}
+#### using class() head() levels()
 
-class(fData(eset)$gene_symbol)
-# or via methods of ExpressionSet objects (Biobase)
-# class(fData(eset)$gene_symbol)
-head(levels(fData(eset)$gene_symbol))
+```{r eset fdata}
+#what types are fData(eset) and fData(eset)$gene_symbol
+
+
+#look up the five first non duplicated gene names
 
 ```
 
-**<span style="color:red">* Use @ and $ accessors to obtain the same results</span>**
+**<span style="color:red">* Use @ and $ accessors instead of fData() to obtain the same results</span>**
 
 ```{r}
 #enter your code here 
@@ -148,20 +166,29 @@ head(levels(fData(eset)$gene_symbol))
 
 ### - eset dimensions
 ```{r eset dim}
+#what are the dimensions of eset
 dim(eset)
 ```
+
+##  pData()
 
 ### - Use `eset@phenoData@data` or pData() to access samples pheno data
 
 ```{r eset pData}
-head(pData(eset)[c(1:3), c(1:7)])
-
-paste(names(pData(eset)),sapply(pData(eset), class),sep = " - ")[c(1:10,143:153)]
+# look inside pData(eset) for these dimentions [c(1:3), c(1:30)]
+#your code here
 
 ```
 
+### Here are some interesting features
 
-Usually, only the first 30~40 first info slots are availables upon data collection.
+
+```{r}
+paste(names(pData(eset)),sapply(pData(eset), class),sep = " - ")[c(1:10,143:153)]
+```
+
+
+Usually, only the 10~15 first info slots are availables upon data collection.
 It's very rare to have access to clinical data, here the clinical data has been collected by the package developpers. 
 
 ### - Let's have a look at another unprocessed dataset.
@@ -173,13 +200,13 @@ gse=GEOquery::getGEO('GSE39591')
 
 **<span style="color:red">* Use the class function on gse, gse$GSE39591_series_matrix.txt.gz </span>** 
 
-**<span style="color:red">* Use pData and fData to overlook the phenotypic and feature data. </span>** 
+**<span style="color:red">* Create a new variable for gse$GSE39591_series_matrix.txt.gz and check dims </span>** 
 
+**<span style="color:red">* Use pData and fData to overlook the phenotypic and feature data. </span>** 
 
 
 ```{r}
 #enter your code here 
-
 ```
 
 <br/> 
@@ -257,7 +284,6 @@ paste(names(clinical),sapply(clinical, class),sep = " - ")
 ```{r}
 
 #Your code here
-
 ```
  
 ## Gene expression impact on survival
@@ -283,8 +309,9 @@ url="https://marlin-prod.literatumonline.com/cms/attachment/3a4eb87d-98c3-4937-b
 #### - ERBB2 - receptor tyrosine kinases
 
 ```{r, echo=F}
+#find the lines of fData(eset) corresponding to 'ERBB2IP'
 
-g=which(fData(eset)$gene_symbol=="ERBB2IP")
+#your code here
 subset=apply(exprs(eset)[g,],MARGIN = 2,FUN = max)
 erbb2=ifelse(subset>mean(subset),1,0)
 
