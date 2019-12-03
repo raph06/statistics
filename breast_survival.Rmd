@@ -79,11 +79,11 @@ list.eset=curatedBreastDataExprSetList
 
 ```{r}
 # How big is loaded object
-## your code here
+length(list.eset)
 
 # what's inside ? 
-## your code here
-
+# first 5 elements
+head(names(list.eset))
 ```
 
 
@@ -134,14 +134,20 @@ eset=list.eset[[4]]
 
 #what types are eset and eset@assayData$exprs
 
-#your code here
+class(eset) 
+# class is ExpressionSet, this class has a package attribute called Biobase
+
+class(eset@assayData$exprs)
 
 #have a look into exprs(eset)
 #USE head()
 
-#your code here
+head(exprs(eset))
 
 ```
+
+Here we have the top 5 rows of the expression matrix, rows are indices and should be replaced by gene names, and column names correspond to patients id.
+
 
 ## fData()
 
@@ -151,16 +157,20 @@ eset=list.eset[[4]]
 
 ```{r eset fdata}
 #what types are fData(eset) and fData(eset)$gene_symbol
-
+class(fData(eset))
+class(fData(eset)$gene_symbol)
 
 #look up the five first non duplicated gene names
-
+head(unique(fData(eset)$gene_symbol))
+#or
+head(levels(fData(eset)$gene_symbol))
 ```
 
 **<span style="color:red">* Use @ and $ accessors instead of fData() to obtain the same results</span>**
 
 ```{r}
 #enter your code here 
+class(eset@featureData@data$gene_symbol)
 
 ```
 
@@ -176,9 +186,10 @@ dim(eset)
 
 ```{r eset pData}
 # look inside pData(eset) for these dimentions [c(1:3), c(1:30)]
-#your code here
-
+pData(eset)[c(1:3), c(1:30)]
 ```
+
+Here you have all the informations regarding the processing and the phenotypic data of each samplkes/patients.
 
 ### Here are some interesting features
 
@@ -194,20 +205,29 @@ It's very rare to have access to clinical data, here the clinical data has been 
 ### - Let's have a look at another unprocessed dataset.
 
 ```{r, echo=T, message=FALSE, cache=F}
-gse=GEOquery::getGEO('GSE39591')
+gse.list=GEOquery::getGEO('GSE39591')
 ```
 
 
-**<span style="color:red">* Use the class function on gse, gse$GSE39591_series_matrix.txt.gz </span>** 
+**<span style="color:red">* Use the class function on gse</span>** 
 
 **<span style="color:red">* Create a new variable for gse$GSE39591_series_matrix.txt.gz and check dims </span>** 
 
-**<span style="color:red">* Use pData and fData to overlook the phenotypic and feature data. </span>** 
+**<span style="color:red">* Use pData  [c(1:3), c(1:30)] and fData to overlook the phenotypic and feature data. </span>** 
 
 
 ```{r}
-#enter your code here 
+class(gse.list)
+
+gse=gse.list$GSE39591_series_matrix.txt.gz
+class(gse)
+dim(gse) 
+
+pData(gse)[c(1:3), c(1:30)] #sample info
+head(fData(gse)) #gene info
 ```
+
+We find that the collected data is under the form of a list and that it contains an Expression set as shown before.
 
 <br/> 
 
@@ -282,7 +302,7 @@ paste(names(clinical),sapply(clinical, class),sep = " - ")
 
 ```{r}
 
-#Your code here
+head(clinical)
 ```
  
 ## Gene expression impact on survival
@@ -336,40 +356,97 @@ erbb2=ifelse(subset>mean(subset),1,0)
 
 gene=erbb2
 
-#fit0
+#fit0: every patients survival probability (1 group)
+fit0=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~1)
 
-#fit
+#fit: two groups based on discretized gene expression (~ erbb2)
+fit=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS) ~ gene)
 
 #fit table
+fit_table=coxph(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~gene)
 
-# info=summary(fit_table)
-# pval=info$sctest[3]
-# coef=info$coefficients[1]
-# HR=info$coefficients[2]
-# ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
-#            pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
-#                c("low expression\ngroup","high expression\ngroup","all patients"),linetype = c(1,1,2),censor.shape="x", censor.size = 3,
-#            title = "\tSurvival model - ERBB2",xlab = "Time in Months",pval.method =   TRUE,
-#            ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), xlim = c(0, 145))
+info=summary(fit_table)
+pval=info$sctest[3]
+coef=info$coefficients[1]
+HR=info$coefficients[2]
+ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
+           pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
+               c("low expression\ngroup","high expression\ngroup","all patients"),linetype = c(1,1,2),censor.shape="x", censor.size = 3,
+           title = "\tSurvival model - ERBB2",xlab = "Time in Months",pval.method =   TRUE,
+           ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), xlim = c(0, 145))
 
+```
+
+```{r}
+print(pval);
 ```
 
 
 #### - PTEN - tumor suppressor 
 
-```{r echo=T, results='hide'}
+```{r echo=T}
+g=which(fData(eset)$gene_symbol=="PTEN")
+subset=apply(exprs(eset)[g,],MARGIN = 2,FUN = max)
+PTEN=ifelse(subset>mean(subset),1,0)
 
-# info=summary(fit_table)
-# pval=info$sctest[3]
-# coef=info$coefficients[1]
-# HR=info$coefficients[2]
-# ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
-#            pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
-#                c("low expression\ngroup","high expression\ngroup","all patients"),
-#            linetype = c(1,1,2),censor.shape="x", censor.size = 3,
-#            title = "\tSurvival model - PTEN",xlab = "Time in Months",pval.method =   TRUE,
-#            ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), xlim = c(0, 145))
+gene=PTEN
+
+#fit0: every patients survival probability (1 group)
+fit0=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~1)
+
+#fit: two groups based on discretized gene expression (~PTEN)
+fit=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS) ~ gene)
+
+#fit table
+fit_table=coxph(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~gene)
+
+info=summary(fit_table)
+pval=info$sctest[3]
+coef=info$coefficients[1]
+HR=info$coefficients[2]
+ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
+           pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
+               c("low expression\ngroup","high expression\ngroup","all patients"),
+           linetype = c(1,1,2),censor.shape="x", censor.size = 3,
+           title = "\tSurvival model - PTEN",xlab = "Time in Months",pval.method =   TRUE,
+           ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), xlim = c(0, 145))
 ```
+
+```{r}
+print(pval);
+```
+
+**<span style="color:blue">Pvalue is significant, so we can have a look at the Hazard ratio between the two groups.  </span>** 
+
+
+```{r}
+print(HR);
+```
+
+##### Hazard ratio
+
+<br/>
+
+* __3 cases__:
+    * HR = 1
+    * HR < 1
+    * HR > 1
+
+As its name suggest, it's a ratio between too hazard (risk) values.
+
+* If the ratio is 1 the risk values of the two groups are the same. <br/>
+(e.g: gr1=risk of 8, gr2 risk of 8 - HR = 8/8 = 1)
+
+* If the ratio is below 1 the risk value of the second group is higher than the risk of the first group. <br/>
+(e.g: gr1=risk of 1, gr2 risk of 8 - HR = 1/8 = 0.125).<br/>
+The ratio HR<1 can be read 1/HR (hazard rate) to have a readable ratio. <br/>
+(e.g: 1/0.125 = 8 times more Hazard in one of the two groups)
+
+* If the ratio is above 1 the risk value of the first group is higher than the risk value in the second group. <br/>
+(e.g: gr1=risk of 1, gr2 risk of 8 - HR = 8/1 = 8)  
+
+    
+
 
 
 ```{r, echo=F}
@@ -408,25 +485,36 @@ Here is an example of cohort heterogeneity of survival scores across all genes
 
 ```{r relapse 2.1}
 
-#Your code here
+#fit0: every patients survival probability (1 group)
+fit0=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~1)
+
+#fit: two groups based on clinical data  (~RFS)
+fit=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS) ~ clinical$clinical.RFS)
+
+#fit table
+fit_table=coxph(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~clinical$clinical.RFS)
 
 ```
 
 
 ```{r relapse3}
 
-# info=summary(fit_table)
-# pval=info$sctest[3]
-# coef=info$coefficients[1]
-# HR=info$coefficients[2]
-# ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
-#            pval = TRUE,palette =c("coral2","steelblue2",'Grey'),legend.labs =
-#                c("Relapse\ngroup","Relapse-free\ngroup","all patients"),linetype = c(1,1,2),censor.shape="x", censor.size = 3,
-#            title = "\tSurvival model - Relapse free survival",xlab = "Time in Months",pval.method =   TRUE,
-#            ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), conf.int = TRUE, xlim = c(0, 145))
+info=summary(fit_table)
+pval=info$sctest[3]
+coef=info$coefficients[1]
+HR=info$coefficients[2]
+ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
+           pval = TRUE,palette =c("coral2","steelblue2",'Grey'),legend.labs =
+               c("Relapse\ngroup","Relapse-free\ngroup","all patients"),linetype = c(1,1,2),censor.shape="x", censor.size = 3,
+           title = "\tSurvival model - Relapse free survival",xlab = "Time in Months",pval.method =   TRUE,
+           ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), conf.int = TRUE, xlim = c(0, 145))
 
    
    
+```
+
+```{r}
+print(pval);print(HR)
 ```
 
 ### How good is your model
@@ -498,20 +586,32 @@ It represent the FPR (false positive rate) against the TPR (true positive rate)
 ## Metastasis impact on survival
 
 
-```{r metastasis, echo=F}
+```{r metastasis}
+#fit0: every patients survival probability (1 group)
+fit0=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~1)
 
-# info=summary(fit_table)
-# pval=info$sctest[3]
-# coef=info$coefficients[1]
-# HR=info$coefficients[2]
-# ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
-#            pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
-#                c("No metastasis\ngroup","Metastasis\ngroup","all patients"),
-#           linetype = c(1,1,2),censor.shape="x", censor.size = 3,
-#            title = "\tSurvival model - Metastasis",xlab = "Time in Months",pval.method =   TRUE,
-#            ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), xlim = c(0, 145) )
+#fit: two groups based on clinical data (~metastasis)
+fit=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS) ~ clinical$clinical.metastasis)
+
+#fit table
+fit_table=coxph(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~clinical$clinical.metastasis)
+
+info=summary(fit_table)
+pval=info$sctest[3]
+coef=info$coefficients[1]
+HR=info$coefficients[2]
+ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
+           pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
+               c("No metastasis\ngroup","Metastasis\ngroup","all patients"),
+          linetype = c(1,1,2),censor.shape="x", censor.size = 3,
+           title = "\tSurvival model - Metastasis",xlab = "Time in Months",pval.method =   TRUE,
+           ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), xlim = c(0, 145) )
 
 
+```
+
+```{r}
+print(pval);print(HR)
 ```
 
 <br/>
@@ -526,48 +626,76 @@ It represent the FPR (false positive rate) against the TPR (true positive rate)
 
 
 ```{r age, include=T}
-#your code here
+age=ifelse(clinical$clinical.age>=50,1,0)
+
+#fit0: every patients survival probability (1 group)
+fit0=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~1)
+
+#fit: two groups based on clinical data (~age)
+fit=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS) ~ age)
+
+#fit table
+fit_table=coxph(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~age)
+
+
 ```
 
 ```{r age2}
 
-# info=summary(fit_table)
-# pval=info$sctest[3]
-# coef=info$coefficients[1]
-# HR=info$coefficients[2]
-# ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
-#          pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
-#              c("<50 yrs old\ngroup","> 50 yrs old\ngroup","all patients"),
-#         linetype = c(1,1,2),censor.shape="x", censor.size = 3,
-#          title = "\tSurvival model - Age",xlab = "Time in Months",pval.method =   TRUE,
-#          ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"),xlim = c(0, 145) )
+info=summary(fit_table)
+pval=info$sctest[3]
+coef=info$coefficients[1]
+HR=info$coefficients[2]
+ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
+         pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
+             c("<50 yrs old\ngroup","> 50 yrs old\ngroup","all patients"),
+        linetype = c(1,1,2),censor.shape="x", censor.size = 3,
+         title = "\tSurvival model - Age",xlab = "Time in Months",pval.method =   TRUE,
+         ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"),xlim = c(0, 145) )
 
-
+pval
 ```
+
+With this cut off the model is not discriminant in term of survival between the two groups. 
+
+Cut off can be adapted to the informations found in the litterature.
+
 
 <br/>
 
-## Tumor size impact on survival 'clinical.tumor_size_cm_preTrt_preSurgery'
+## Tumor stage impact on survival 'clinical.tumor_stage_preTrt'
 
 ```{r tumor, include=T, eval=F}
-#your code here
+#fit0: every patients survival probability (1 group)
+fit0=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~1)
+
+#fit: two groups based on clinical data (~tumor stage)
+fit=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS) ~ clinical$clinical.tumor_stage_preTrt)
+
+#fit table
+fit_table=coxph(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~clinical$clinical.tumor_stage_preTrt)
+
+info=summary(fit_table)
+pval=info$sctest[3]
+coef=info$coefficients[1]
+HR=info$coefficients[2]
 ```
 
 
 ```{r tumor2, include=T}
 
-# pval=info$sctest[3]
-# coef=info$coefficients[1]
-# HR=info$coefficients[2]*10
-# if (pval<0.05){print(pval);print(HR)}
-# ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
-#            pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
-#                c("Smaller tumor\ngroup","Bigger tumor\ngroup","all patients"),
-#           linetype = c(1,1,2),censor.shape="x", censor.size = 3,
-#            title = "\tSurvival model - Tumor size (preTrt)",xlab = "Time in Months",pval.method =TRUE,
-#            ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), xlim = c(0, 145) )
-# 
-#   
+pval=info$sctest[3]
+coef=info$coefficients[1]
+HR=info$coefficients[2]*10
+if (pval<0.05){print(pval);print(HR)}
+ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
+           pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
+               c("T1\ngroup","T2\ngroup","all patients"),
+          linetype = c(1,1,2),censor.shape="x", censor.size = 3,
+           title = "\tSurvival model - Tumor stage (preTrt)",xlab = "Time in Months",pval.method =TRUE,
+           ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), xlim = c(0, 145) )
+pval
+
 ```
 
 <br/>
@@ -577,23 +705,35 @@ It represent the FPR (false positive rate) against the TPR (true positive rate)
 ### - ERBB2 amplification
 
 ```{r mutations, include=T}
-#your code here
+#fit0: every patients survival probability (1 group)
+fit0=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~1)
+
+#fit: two groups based on clinical data (~ERBB2 amplification)
+fit=survfit(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS) ~ clinical$clinical.ERBB2_CPN_amplified)
+
+#fit table
+fit_table=coxph(Surv(clinical$clinical.OS_months_or_MIN_months_of_OS,clinical$clinical.OS)~clinical$clinical.ERBB2_CPN_amplified)
+
+info=summary(fit_table)
+pval=info$sctest[3]
+coef=info$coefficients[1]
+HR=info$coefficients[2]
 ```
 
 
 ```{r, echo=T}
-# pval=info$sctest[3]
-# coef=info$coefficients[1]
-# HR=info$coefficients[2]
-# print(pval)
-# if (pval<0.05){print(pval);print(HR)}
-# ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
-#            pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
-#                c("down group","up group","all patients"),linetype = c(1,1,2),censor.shape="x", censor.size = 3,
-#            title = "\tSurvival model - ERBB2 amplification",xlab = "Time in Month",pval.method =   TRUE,
-#            ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), xlim = c(0, 145) )
+pval=info$sctest[3]
+coef=info$coefficients[1]
+HR=info$coefficients[2]
+print(pval)
+if (pval<0.05){print(pval);print(HR)}
+ggsurvplot(list('risk'=fit,'null.model'=fit0),data=clinical,
+           pval = TRUE,palette =c("steelblue2", "coral2",'Grey'),legend.labs =
+               c("down group","up group","all patients"),linetype = c(1,1,2),censor.shape="x", censor.size = 3,
+           title = "\tSurvival model - ERBB2 amplification",xlab = "Time in Month",pval.method =   TRUE,
+           ggtheme = theme_bw(), ncensor.plot = F, combine = T,surv.scale=c("percent"), xlim = c(0, 145) )
 
-
+pval
 ```
 
  <br/>
@@ -601,7 +741,7 @@ It represent the FPR (false positive rate) against the TPR (true positive rate)
 
 ## Survival across studies
 
-```{r studies, echo=F}
+```{r studies}
 studies=c("6577","16446","22226")
 clinical=clinicalData$clinicalTable[which(clinicalData$clinicalTable$study_ID%in%studies),]
 
@@ -629,7 +769,7 @@ ggsurvplot(fit,data=clinical,
 ## Survival according to treatments
 
 
-```{r treatements0, echo=F}
+```{r treatements0}
 treatments=clinical[,c(117:119,124,128,136:137)]
 study=ifelse(as.integer(clinical$study_ID)==22226,1,0)
 treatments=cbind(treatments,study)
@@ -637,7 +777,7 @@ neoadj_or_adj=clinical[,c(138)]
 treatment_class=rowSums(sapply(treatments,as.numeric)-1)+1
 ```
 
-```{r treatements, echo=F}
+```{r treatements}
 
 fit <- survfit(Surv(clinical$OS_months_or_MIN_months_of_OS,clinical$OS) ~ treatment_class ,                 
              data = data.frame(clinical))
