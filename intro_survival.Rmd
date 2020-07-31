@@ -383,7 +383,7 @@ print(fit_table)
 
 
 url="https://raw.githubusercontent.com/raph06/statistics/master/ranked_survival_score_correspondance.png"
-url2="http://dni-institute.in/blogs/wp-content/uploads/2015/02/cox_regression_output.png"
+url2="https://raw.githubusercontent.com/raph06/statistics/master/cox_regression_output.png"
 
 ```
 
